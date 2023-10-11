@@ -62,8 +62,6 @@ interface WeatherResponse {
   current: Current;
 }
 
-const leaderboard: Leaderboard = {};
-
 async function refetch(leaderboard: Leaderboard) {
   const promises = Object.values(leaderboard).map(({ location }) =>
     fetch(createUrl(location.name))
@@ -84,6 +82,7 @@ async function refetch(leaderboard: Leaderboard) {
 }
 
 export default class Server implements Party.Server {
+  public rooms: Record<string, Leaderboard> = {};
   constructor(readonly party: Party.Party) {}
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
@@ -95,6 +94,11 @@ export default class Server implements Party.Server {
   url: ${new URL(ctx.request.url).pathname}`
     );
 
+    const leaderboard =
+      this.rooms[this.party.id] ?? (this.rooms[this.party.id] = {});
+
+    console.log('ROOM:', this.party.id);
+
     conn.send(
       JSON.stringify({
         type: 'leaderboard.updated',
@@ -104,6 +108,7 @@ export default class Server implements Party.Server {
   }
 
   onStart(): void | Promise<void> {
+    const leaderboard = this.rooms[this.party.id];
     setInterval(async () => {
       const newLeaderboard = await refetch(leaderboard);
 
@@ -119,6 +124,7 @@ export default class Server implements Party.Server {
   }
 
   onMessage(message: string, sender: Party.Connection) {
+    const leaderboard = this.rooms[this.party.id];
     const eventObject = JSON.parse(message);
 
     console.log(

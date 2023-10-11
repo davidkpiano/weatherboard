@@ -98,6 +98,8 @@ header {
   grid-column: 2 / 3;
   grid-row: 1 / 2;
   font-size: 1.25rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .user-location {
