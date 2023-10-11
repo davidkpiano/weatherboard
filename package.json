@@ -7,7 +7,11 @@
     "deploy": "partykit deploy"
   },
   "dependencies": {
-    "partysocket": "0.0.9"
+    "@clerk/clerk-js": "^4.60.1",
+    "@clerk/themes": "^1.7.7",
+    "lit-html": "^2.8.0",
+    "partysocket": "0.0.9",
+    "xstate": "5.0.0-beta.33"
   },
   "devDependencies": {
     "partykit": "0.0.29",
