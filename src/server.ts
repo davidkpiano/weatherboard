@@ -177,6 +177,28 @@ export default class Server implements Party.Server {
         });
     }
   }
+
+  async onRequest(req: Party.Request) {
+    console.log(req.method);
+    if (req.method === 'GET') {
+      const stuff = await this.party.storage.list();
+
+      const leaderboards: Record<string, Leaderboard> = {};
+      for (const [key, value] of stuff) {
+        if (key.startsWith('leaderboard:')) {
+          leaderboards[key] = value as any;
+        }
+      }
+
+      return new Response(JSON.stringify(leaderboards), {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    return new Response('Method not allowed', { status: 405 });
+  }
 }
 
 Server satisfies Party.Worker;
