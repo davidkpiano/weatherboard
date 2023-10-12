@@ -82,10 +82,9 @@ async function refetch(leaderboard: Leaderboard) {
 }
 
 export default class Server implements Party.Server {
-  public rooms: Record<string, Leaderboard> = {};
   constructor(readonly party: Party.Party) {}
 
-  onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
+  async onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     // A websocket just connected!
     console.log(
       `Connected:
@@ -95,7 +94,11 @@ export default class Server implements Party.Server {
     );
 
     const leaderboard =
-      this.rooms[this.party.id] ?? (this.rooms[this.party.id] = {});
+      (await this.party.storage.get<Record<string, Leaderboard>>(
+        `leaderboard:${this.party.id}`
+      )) ?? {};
+
+    await this.party.storage.put(`leaderboard:${this.party.id}`, leaderboard);
 
     console.log('ROOM:', this.party.id);
 
@@ -107,24 +110,33 @@ export default class Server implements Party.Server {
     );
   }
 
-  onStart(): void | Promise<void> {
-    const leaderboard = this.rooms[this.party.id];
+  async onStart(): Promise<void> {
+    const leaderboard =
+      (await this.party.storage.get<Leaderboard>(
+        `leaderboard:${this.party.id}`
+      )) ?? {};
     setInterval(async () => {
       const newLeaderboard = await refetch(leaderboard);
 
-      Object.assign(leaderboard, newLeaderboard);
+      await this.party.storage.put(
+        `leaderboard:${this.party.id}`,
+        newLeaderboard
+      );
 
       this.party.broadcast(
         JSON.stringify({
           type: 'leaderboard.updated',
-          leaderboard,
+          leaderboard: newLeaderboard,
         })
       );
     }, 1000 * 60 * 10);
   }
 
-  onMessage(message: string, sender: Party.Connection) {
-    const leaderboard = this.rooms[this.party.id];
+  async onMessage(message: string, sender: Party.Connection) {
+    const leaderboard =
+      (await this.party.storage.get<Leaderboard>(
+        `leaderboard:${this.party.id}`
+      )) ?? {};
     const eventObject = JSON.parse(message);
 
     console.log(
@@ -141,12 +153,17 @@ export default class Server implements Party.Server {
       );
       fetch(createUrl(eventObject.location))
         .then((response) => response.json())
-        .then((data: WeatherResponse) => {
+        .then(async (data: WeatherResponse) => {
           leaderboard[sender.id] = {
             name: eventObject.name,
             location: data.location,
             current: data.current,
           };
+
+          await this.party.storage.put(
+            `leaderboard:${this.party.id}`,
+            leaderboard
+          );
 
           this.party.broadcast(
             JSON.stringify({

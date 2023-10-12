@@ -35,6 +35,7 @@ export const weatherMachine = createMachine(
       src: fromCallback(({ sendBack, receive }) => {
         partySocket.addEventListener('message', (event) => {
           const eventObject = JSON.parse(event.data);
+          console.log(eventObject);
           sendBack(eventObject);
         });
 
@@ -68,22 +69,14 @@ export const weatherMachine = createMachine(
           },
           getName: {
             tags: 'getName',
-            invoke: {
-              src: fromPromise(async () => {
-                const name = prompt('What is your name?');
-                return Promise.resolve(name);
-              }),
-              onDone: [
-                {
-                  guard: ({ event }) => event.output?.length > 0,
-                  actions: assign({
-                    name: ({ event }) => event.output,
-                  }),
-
-                  target: 'getLocation',
-                },
-                { target: 'getName' },
-              ],
+            on: {
+              nameGiven: {
+                target: 'getLocation',
+                guard: ({ event }) => event.name.length,
+                actions: assign({
+                  name: ({ event }) => event.name,
+                }),
+              },
             },
           },
           getLocation: {

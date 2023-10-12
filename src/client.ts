@@ -3,19 +3,41 @@ import './styles.css';
 import PartySocket from 'partysocket';
 import { html, render } from 'lit-html';
 
-import { createActor, type SnapshotFrom } from 'xstate';
+import { createActor, type EventFrom, type SnapshotFrom } from 'xstate';
 import { weatherMachine } from './machine';
 
 declare const PARTYKIT_HOST: string;
 
-const view = (state: SnapshotFrom<typeof weatherMachine>) => {
+const view = (
+  state: SnapshotFrom<typeof weatherMachine>,
+  send: (event: EventFrom<typeof weatherMachine>) => void
+) => {
   const { leaderboard } = state.context;
   return html`
     <header>
       ${state.hasTag('noPermission')
         ? html`<h1>y u no permission</h1>`
         : html`<h1>Weatherboard</h1>`}
+      ${state.hasTag('getName')
+        ? html`<form
+            @submit=${(ev: SubmitEvent) => {
+              ev.preventDefault();
+
+              const formData = new FormData(ev.target as HTMLFormElement);
+
+              const name = formData.get('name') as string;
+
+              send({
+                type: 'nameGiven',
+                name,
+              });
+            }}
+          >
+            <input type="text" name="name" placeholder="Your name" />
+          </form>`
+        : ''}
     </header>
+
     <div class="items">
       ${state.context.name && !leaderboard[state.context.id]
         ? html`
@@ -25,12 +47,12 @@ const view = (state: SnapshotFrom<typeof weatherMachine>) => {
             >
               <div class="user-weather">
                 <div></div>
-                <div>??&deg;</div>
+                <div>?? &deg;</div>
               </div>
               <div class="user-name" title="${state.context.name}">
                 ${state.context.name}
               </div>
-              <div class="user-location">Not sure yet...</div>
+              <div class="user-location">Finding a thermometer…</div>
             </div>
           `
         : ''}
@@ -80,10 +102,10 @@ const actor = createActor(weatherMachine, {
 actor.subscribe((s) => {
   if ('startViewTransition' in document) {
     (document as any).startViewTransition(() => {
-      render(view(actor.getSnapshot()), elApp);
+      render(view(actor.getSnapshot(), actor.send), elApp);
     });
   } else {
-    render(view(actor.getSnapshot()), elApp);
+    render(view(actor.getSnapshot(), actor.send), elApp);
   }
 });
 
