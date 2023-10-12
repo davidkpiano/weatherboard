@@ -2,6 +2,8 @@
 
 You're coming to this party, weather you like it or not!
 
+## [leaderboard.davidkpiano.partykit.dev](https://leaderboard.davidkpiano.partykit.dev)
+
 ---
 
 This is a [Partykit](https://partykit.io) project, which lets you create real-time collaborative applications with minimal coding effort.
