@@ -179,7 +179,6 @@ export default class Server implements Party.Server {
   }
 
   async onRequest(req: Party.Request) {
-    console.log(req.method);
     if (req.method === 'GET') {
       const stuff = await this.party.storage.list();
 

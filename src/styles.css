@@ -131,12 +131,15 @@ header {
 
 /* mobile devices */
 @media (max-width: 40rem) {
-  .user-weather {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
+  .item {
+    padding: 1rem;
+    grid-column-gap: 1rem;
   }
   .user-name {
     align-self: self-end;
+    font-size: 1.5rem;
+  }
+  .user-weather {
     font-size: 1.5rem;
   }
 }
